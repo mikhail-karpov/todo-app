@@ -1,0 +1,13 @@
+server.port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/todo_service
+    username: postgres
+    password: postgres
+  flyway:
+    enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
