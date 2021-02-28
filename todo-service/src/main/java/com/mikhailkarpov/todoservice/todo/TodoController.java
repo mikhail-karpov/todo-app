@@ -1,9 +1,12 @@
 package com.mikhailkarpov.todoservice.todo;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/todo")
@@ -11,7 +14,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class TodoController {
 
     private final TodoService todoService;
-    private final TodoRepository todoRepository;
 
     @GetMapping
     public Iterable<Todo> findAll() {
@@ -26,7 +28,7 @@ public class TodoController {
     }
 
     @PostMapping
-    public ResponseEntity<Todo> save(@RequestBody Todo todo,
+    public ResponseEntity<Todo> save(@Valid @RequestBody Todo todo,
                                      UriComponentsBuilder uriComponentsBuilder) {
 
         Todo saved = todoService.create(todo);
@@ -37,12 +39,13 @@ public class TodoController {
     }
 
     @PutMapping("/{id}")
-    public Todo update(@PathVariable Long id, @RequestBody Todo update) {
+    public Todo update(@PathVariable Long id, @Valid @RequestBody Todo update) {
 
         return todoService.update(id, update);
     }
 
     @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
 
         todoService.delete(id);
