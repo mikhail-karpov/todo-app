@@ -1,32 +1,62 @@
 version: "3.7"
 
 services:
-  todo-service-db:
-    image: "postgres:12-alpine"
-    container_name: todo-service-db
-    restart: always
-    environment:
-      - POSTGRES_DB=todo_service
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - postgres-data:/var/lib/postgres/data
-    ports:
-    - "5432:5432"
-
   todo-service:
     build: ./todo-service
     image: todo-service:latest
     container_name: todo-service
     depends_on:
       - todo-service-db
-    restart: always
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://todo-service-db:5432/todo_service
-      - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=postgres
+      - SPRING_DATASOURCE_USERNAME=todo_service
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/certs
     ports:
-    - "8081:8081"
+    - 8081:8081
+
+  todo-service-db:
+    image: "postgres:12-alpine"
+    container_name: todo-service-db
+    environment:
+      - POSTGRES_DB=todo_service
+      - POSTGRES_USER=todo_service
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - todo-service-db:/var/lib/postgres/data
+    ports:
+      - 5432:5432
+
+  keycloak:
+    image: jboss/keycloak
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=password
+      - KEYCLOAK_IMPORT=/tmp/todo-app-realm.json
+      - DB_VENDOR=postgres
+      - DB_ADDR=keycloak-db:5432
+      - DB_DATABASE=keycloak
+      - DB_USER=keycloak
+      - DB_PASSWORD=password
+    ports:
+    - 8180:8080
+    depends_on:
+      - keycloak-db
+    volumes:
+    - ./keycloak/todo-app-realm.json:/tmp/todo-app-realm.json
+
+  keycloak-db:
+    image: "postgres:12-alpine"
+    container_name: keycloak-db
+    environment:
+      - POSTGRES_DB=keycloak
+      - POSTGRES_USER=keycloak
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - keycloak-db:/var/lib/postgres/data
+    ports:
+    - 5433:5432
 
 volumes:
-  postgres-data: {}
+  todo-service-db: {}
+  keycloak-db: {}

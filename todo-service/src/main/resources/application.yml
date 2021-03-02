@@ -3,11 +3,17 @@ server.port: 8081
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/todo_service
-    username: postgres
-    password: postgres
+    username: todo_service
+    password: password
   flyway:
     enabled: true
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:8180/auth/realms/todo-app/protocol/openid-connect/certs
