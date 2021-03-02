@@ -1,6 +1,13 @@
 version: "3.7"
 
 services:
+  todo-client:
+    build: ./todo-client
+    image: todo-client:latest
+    container_name: todo-client
+    ports:
+    - 8080:8080
+
   todo-service:
     build: ./todo-service
     image: todo-service:latest
@@ -29,10 +36,11 @@ services:
 
   keycloak:
     image: jboss/keycloak
+    container_name: keycloak
     environment:
+      - KEYCLOAK_IMPORT=/tmp/todo-app-realm.json
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=password
-      - KEYCLOAK_IMPORT=/tmp/todo-app-realm.json
       - DB_VENDOR=postgres
       - DB_ADDR=keycloak-db:5432
       - DB_DATABASE=keycloak
