@@ -5,14 +5,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 @EnableWebSecurity
-public class OAuth2Config extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //@formatter:off
         http
-            .csrf().disable()
-            .authorizeRequests().anyRequest().authenticated().and()
+            .authorizeRequests()
+                .antMatchers("/", "/error").permitAll()
+                .anyRequest().authenticated().and()
             .oauth2Login();
         //@formatter:on
     }

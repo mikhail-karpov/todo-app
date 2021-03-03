@@ -23,3 +23,7 @@ spring:
             user-info-uri: http://localhost:8180/auth/realms/todo-app/protocol/openid-connect/userinfo
             jwk-set-uri: http://localhost:8180/auth/realms/todo-app/protocol/openid-connect/certs
             user-name-attribute: preferred_username
+
+logging.level:
+  root: INFO
+  com.mikhailkarpov: DEBUG

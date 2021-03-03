@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo-App</title>
+</head>
+<body>
+
+<div align="center">
+    <h1>Todo App</h1>
+
+    <div>
+        <form action="#" th:action="@{/todo}" th:object="${todo}" method="post">
+            <input type="text" th:field="*{description}" required />
+            <div th:if="${#fields.hasErrors('description')}" th:errors="*{description}">Description error</div>
+            <button type="submit">Save</button>
+        </form>
+    </div>
+
+    <div th:if="${#lists.isEmpty(todoList)}">You've not added anything yet</div>
+
+    <div th:if="${not #lists.isEmpty(todoList)}" th:each="todo: ${todoList}">
+        <div>
+            <span th:text="${todo.description}">Description</span>
+            &nbsp;
+            <form action="#" th:action="@{/todo/toggleComplete}" th:object="${todo}" method="post">
+                <button type="submit" th:text="${todo.completed} ? 'yes' : 'no'"/>Complete</button>
+            </form>
+            &nbsp;
+            <form action="#" th:action="@{/todo/delete(id=${todo.id})}" method="post">
+                <button type="submit">Delete</button>
+            </form>
+            <hr>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
