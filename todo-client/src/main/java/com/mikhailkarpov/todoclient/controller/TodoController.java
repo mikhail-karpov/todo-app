@@ -3,6 +3,7 @@ package com.mikhailkarpov.todoclient.controller;
 import com.mikhailkarpov.todoclient.model.Todo;
 import com.mikhailkarpov.todoclient.model.TodoForm;
 import com.mikhailkarpov.todoclient.service.TodoService;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.validation.Valid;
 import java.security.Principal;
@@ -30,7 +32,7 @@ public class TodoController {
 
         List<Todo> todoList = todoService.findByUserName(user.getName());
         model.addAttribute("todoList", todoList);
-        model.addAttribute("todo", new TodoForm());
+        model.addAttribute("todoForm", new TodoForm());
 
         return "todo";
     }
@@ -38,10 +40,13 @@ public class TodoController {
     @PostMapping("/todo")
     public String saveTodo(@Valid @ModelAttribute TodoForm todoForm,
                            BindingResult result,
-                           @AuthenticationPrincipal OAuth2User user) {
+                           @AuthenticationPrincipal OAuth2User user,
+                           RedirectAttributes redirectAttributes) {
 
         if (result.hasErrors()) {
-            return "todo";
+            String message = result.getAllErrors().stream().findFirst().get().getDefaultMessage();
+            redirectAttributes.addFlashAttribute("error", message);
+            return "redirect:/todo";
         }
 
         log.debug("Request to save todo: {} by '{}'", todoForm, user.getName());
@@ -49,22 +54,22 @@ public class TodoController {
         Todo todo = new Todo();
         todo.setDescription(todoForm.getDescription());
         todo.setCompleted(false);
-
         todoService.save(todo);
+
         return "redirect:/todo";
     }
 
-    @PostMapping("/todo/toggleComplete")
-    public String toggleComplete(@Valid @ModelAttribute Todo todo, @AuthenticationPrincipal OAuth2User user) {
+    @PostMapping("/todo/update")
+    public String toggleComplete(@RequestParam Long id,
+                                 @RequestParam String description,
+                                 @RequestParam Boolean completed,
+                                 @AuthenticationPrincipal OAuth2User user) {
 
-        log.debug("Request to toggle complete for todo with id={} by '{}'", todo.getId(), user.getName());
-        if (todo.getCompleted()) {
-            todo.setCompleted(false);
-        } else {
-            todo.setCompleted(true);
-        }
+        log.debug("Request to toggle complete in todo with id={} by '{}'", id, user.getName());
 
-        todoService.update(todo.getId(), todo);
+        Todo update = new Todo(id, description, !completed);
+        todoService.update(id, update);
+
         return "redirect:/todo";
     }
 
