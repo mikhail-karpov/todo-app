@@ -29,33 +29,6 @@ services:
     volumes:
       - keycloak-db:/var/lib/postgres/data
 
-#  todo-client:
-#    build: ./todo-client
-#    image: todo-client:latest
-#    restart: always
-#    depends_on:
-#      - todo-service
-#    environment:
-#      - APP_SERVICES_TODO-SERVICE_URI=http://todo-service:8081/todo
-#    ports:
-#      - 8080:8080
-
-#  todo-service:
-#    build: ./todo-service
-#    image: todo-service:latest
-#    restart: always
-#    depends_on:
-#      - todo-service-db
-#      - keycloak
-#    environment:
-#      - SPRING_DATASOURCE_URL=jdbc:postgresql://todo-service-db:5432/todo_service
-#      - SPRING_DATASOURCE_USERNAME=todo_service
-#      - SPRING_DATASOURCE_PASSWORD=password
-#      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI=http://keycloak:8080/auth/realms/todo-app
-#      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/certs
-#    ports:
-#      - 8081:8081
-
   todo-service-db:
     image: "postgres:12-alpine"
     restart: always
