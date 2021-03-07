@@ -2,83 +2,84 @@ package com.mikhailkarpov.todoclient.service;
 
 import com.mikhailkarpov.todoclient.model.Todo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 
-import java.util.Arrays;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Service
 public class TodoServiceImpl implements TodoService {
 
-    private static final AtomicLong nextId = new AtomicLong(3);
+    @Value("${app.services.todo-service.uri}")
+    private String todoServiceUri;
 
-    private final List<Todo> todoList = new CopyOnWriteArrayList<>(Arrays.asList(
-            new Todo(1L, "first todo", true),
-            new Todo(2L, "second todo", false)
-    ));
+    private final WebClient webClient;
+
+    public TodoServiceImpl(WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     @Override
     public List<Todo> findByUserName(String name) {
-        log.debug("Loading todo list");
+
+        ResponseEntity<Flux<Todo>> responseEntity = webClient.get()
+                .uri(todoServiceUri)
+                .retrieve()
+                .toEntityFlux(Todo.class)
+                .block();
+
+        log.debug("GET {} resulted in {}", todoServiceUri, responseEntity.getStatusCode());
+
+        List<Todo> todoList = new ArrayList<>();
+        responseEntity.getBody().toIterable().forEach(todoList::add);
         return todoList;
     }
 
     @Override
     public void save(Todo todo) {
-        todo.setId(nextId.getAndIncrement());
-        todoList.add(todo);
-        log.debug("Saving {}", todo);
+
+        ResponseEntity<Todo> responseEntity = webClient.post()
+                .uri(todoServiceUri)
+                .body(BodyInserters.fromValue(todo))
+                .retrieve()
+                .toEntity(Todo.class)
+                .block();
+
+        log.debug("POST {} with body={} resulted in {}", todoServiceUri, todo, responseEntity.getStatusCode());
     }
 
     @Override
     public void update(Long id, Todo update) {
 
-        boolean found = false;
-        Iterator<Todo> iterator = todoList.iterator();
+        String uri = todoServiceUri + "/" + id;
 
-        while (iterator.hasNext() || !found) {
-            Todo next = iterator.next();
+        ResponseEntity<Todo> responseEntity = webClient.put()
+                .uri(uri)
+                .body(BodyInserters.fromValue(update))
+                .retrieve()
+                .toEntity(Todo.class)
+                .block();
 
-            if (next.getId().equals(id)) {
-                next.setCompleted(update.getCompleted());
-                next.setDescription(update.getDescription());
-
-                log.debug("Updated {}", next);
-                found = true;
-            }
-        }
-
-        if (!found) {
-            String errorMessage = String.format("Todo with id=%d not found", id);
-            log.error(errorMessage);
-        }
+        log.debug("PUT {} with body={} resulted in {}", uri, update, responseEntity.getStatusCode());
     }
 
     @Override
     public void delete(Long id) {
 
-        Todo toBeRemoved = null;
-        Iterator<Todo> iterator = todoList.iterator();
+        String uri = todoServiceUri + "/" + id;
 
-        while (iterator.hasNext() || toBeRemoved == null) {
-            Todo next = iterator.next();
-            if (next.getId().equals(id)) {
-                toBeRemoved = next;
-            }
-        }
+        ResponseEntity<Void> responseEntity = webClient.delete()
+                .uri(uri)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
 
-        if (toBeRemoved != null) {
-            todoList.remove(toBeRemoved);
-            log.debug("Todo removed");
-
-        } else {
-
-            String errorMessage = String.format("Todo with id=%d not found", id);
-            log.error(errorMessage);
-        }
+        log.debug("DELETE {} resulted in {}", uri, responseEntity.getStatusCode());
     }
 }

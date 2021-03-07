@@ -16,4 +16,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          issuer-uri: http://localhost:8180/auth/realms/todo-app
           jwk-set-uri: http://localhost:8180/auth/realms/todo-app/protocol/openid-connect/certs
+
+logging.level:
+  root: INFO
+  org.springframework.security: DEBUG

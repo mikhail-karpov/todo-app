@@ -1,42 +1,8 @@
 version: "3.7"
 
 services:
-  todo-client:
-    build: ./todo-client
-    image: todo-client:latest
-    container_name: todo-client
-    ports:
-    - 8080:8080
-
-  todo-service:
-    build: ./todo-service
-    image: todo-service:latest
-    container_name: todo-service
-    depends_on:
-      - todo-service-db
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://todo-service-db:5432/todo_service
-      - SPRING_DATASOURCE_USERNAME=todo_service
-      - SPRING_DATASOURCE_PASSWORD=password
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/certs
-    ports:
-    - 8081:8081
-
-  todo-service-db:
-    image: "postgres:12-alpine"
-    container_name: todo-service-db
-    environment:
-      - POSTGRES_DB=todo_service
-      - POSTGRES_USER=todo_service
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - todo-service-db:/var/lib/postgres/data
-    ports:
-      - 5432:5432
-
   keycloak:
     image: jboss/keycloak
-    container_name: keycloak
     environment:
       - KEYCLOAK_IMPORT=/tmp/todo-app-realm.json
       - KEYCLOAK_USER=admin
@@ -47,11 +13,11 @@ services:
       - DB_USER=keycloak
       - DB_PASSWORD=password
     ports:
-    - 8180:8080
+      - 8180:8080
     depends_on:
       - keycloak-db
     volumes:
-    - ./keycloak/todo-app-realm.json:/tmp/todo-app-realm.json
+      - ./keycloak/todo-app-realm.json:/tmp/todo-app-realm.json
 
   keycloak-db:
     image: "postgres:12-alpine"
@@ -62,9 +28,46 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - keycloak-db:/var/lib/postgres/data
+
+#  todo-client:
+#    build: ./todo-client
+#    image: todo-client:latest
+#    restart: always
+#    depends_on:
+#      - todo-service
+#    environment:
+#      - APP_SERVICES_TODO-SERVICE_URI=http://todo-service:8081/todo
+#    ports:
+#      - 8080:8080
+
+#  todo-service:
+#    build: ./todo-service
+#    image: todo-service:latest
+#    restart: always
+#    depends_on:
+#      - todo-service-db
+#      - keycloak
+#    environment:
+#      - SPRING_DATASOURCE_URL=jdbc:postgresql://todo-service-db:5432/todo_service
+#      - SPRING_DATASOURCE_USERNAME=todo_service
+#      - SPRING_DATASOURCE_PASSWORD=password
+#      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI=http://keycloak:8080/auth/realms/todo-app
+#      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/certs
+#    ports:
+#      - 8081:8081
+
+  todo-service-db:
+    image: "postgres:12-alpine"
+    restart: always
+    environment:
+      - POSTGRES_DB=todo_service
+      - POSTGRES_USER=todo_service
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - todo-service-db:/var/lib/postgres/data
     ports:
-    - 5433:5432
+      - 5432:5432
 
 volumes:
-  todo-service-db: {}
   keycloak-db: {}
+  todo-service-db: {}

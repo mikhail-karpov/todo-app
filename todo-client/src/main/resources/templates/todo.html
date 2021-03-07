@@ -6,12 +6,17 @@
 </head>
 <body>
 
+<!--todo styling-->
+
 <div align="center">
     <h1>Todo App</h1>
+    <div>
+        Hello, <span sec:authentication="name">Username</span>&nbsp;<a href="/logout">logout</a>
+    </div>
 
     <div>
         <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post">
-            <input type="text" th:field="*{description}" />
+            <input type="text" th:field="*{description}" required />
             <button type="submit">Save</button>
         </form>
         <div th:if="${error}" th:text="${error}" style="color: red">Description error</div>
