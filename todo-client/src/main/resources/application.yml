@@ -11,6 +11,7 @@ spring:
           todo-client:
             provider: keycloak
             client-id: todo-client
+            client-secret: d7ae0991-e5ea-4bcb-889b-73d10955731d
             authorization-grant-type: authorization_code
             redirectUri: '{baseUrl}/login/oauth2/code/{registrationId}'
             scope:
@@ -19,7 +20,10 @@ spring:
               - email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8180/auth/realms/todo-app
+            authorization-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/auth
+            token-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/token
+            user-info-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/userinfo
+            jwk-set-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/certs
             user-name-attribute: preferred_username
 
 app:

@@ -3,11 +3,11 @@ version: "3.7"
 services:
   keycloak:
     image: jboss/keycloak
-    container_name: keycloak
     environment:
       - KEYCLOAK_IMPORT=/tmp/todo-app-realm.json
       - KEYCLOAK_USER=admin
       - KEYCLOAK_PASSWORD=password
+      - KEYCLOAK_FRONTEND_URL=http://localhost:8180/auth
       - DB_VENDOR=postgres
       - DB_ADDR=keycloak-db:5432
       - DB_DATABASE=keycloak
@@ -22,7 +22,6 @@ services:
 
   keycloak-db:
     image: "postgres:12-alpine"
-    container_name: keycloak-db
     environment:
       - POSTGRES_DB=keycloak
       - POSTGRES_USER=keycloak
@@ -32,7 +31,6 @@ services:
 
   todo-service:
     build: ./todo-service
-    image: todo-service
     depends_on:
       - todo-service-db
     restart: always
@@ -42,8 +40,6 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER-URI=http://localhost:8180/auth/realms/todo-app
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK-SET-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/certs
-    ports:
-    - 8081:8081
 
   todo-service-db:
     image: "postgres:12-alpine"
@@ -54,6 +50,21 @@ services:
       - POSTGRES_PASSWORD=password
     volumes:
       - todo-service-db:/var/lib/postgres/data
+
+  todo-client:
+    build: ./todo-client
+    depends_on:
+      - todo-service
+      - keycloak
+    restart: always
+    environment:
+      - APP_SERVICES_TODO_SERVICE_URI=http://todo-service:8081/todo
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTHORIZATION-URI=http://localhost:8180/auth/realms/todo-app/protocol/openid-connect/auth
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/token
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USER-INFO-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/userinfo
+      - SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK-SET-URI=http://keycloak:8080/auth/realms/todo-app/protocol/openid-connect/certs
+    ports:
+      - 8080:8080
 
 volumes:
   keycloak-db: {}
