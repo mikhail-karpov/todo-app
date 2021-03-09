@@ -1,0 +1,37 @@
+server.port: 8080
+
+spring:
+  thymeleaf:
+    cache: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          todo-client:
+            provider: keycloak
+            client-id: todo-client
+            client-secret: d7ae0991-e5ea-4bcb-889b-73d10955731d
+            authorization-grant-type: authorization_code
+            redirectUri: '{baseUrl}/login/oauth2/code/{registrationId}'
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          keycloak:
+            authorization-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/auth
+            token-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/token
+            user-info-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/userinfo
+            jwk-set-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/certs
+            user-name-attribute: preferred_username
+
+app:
+  services:
+    todo-service:
+      uri: http://localhost:8081/todo
+
+logging.level:
+  root: INFO
+  org.springframework.security: DEBUG
+  com.mikhailkarpov: DEBUG

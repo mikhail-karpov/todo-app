@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Todo-App</title>
+</head>
+<body>
+
+<!--todo styling-->
+
+<div align="center">
+    <h1>Todo App</h1>
+<!--    <div>-->
+<!--        Hello, <span sec:authentication="name">Username</span>&nbsp;<a href="/logout">logout</a>-->
+<!--    </div>-->
+
+    <div>
+        <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post">
+            <input type="text" th:field="*{description}" required />
+            <button type="submit">Save</button>
+        </form>
+        <div th:if="${error}" th:text="${error}" style="color: red">Description error</div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(todoList)}">You've not added anything yet</div>
+
+    <div th:if="${not #lists.isEmpty(todoList)}" th:each="next: ${todoList}">
+        <div>
+            <span th:text="${next.description}">Description</span>
+            &nbsp;
+            <form action="#" th:action="@{/todo/update}" method="post">
+                <input type="hidden" th:value="${next.id}" th:name="id">
+                <input type="hidden" th:value="${next.description}" th:name="description">
+                <input type="hidden" th:value="${next.completed}" th:name="completed">
+                <button type="submit" th:text="${next.completed} ? 'yes' : 'no'"/>Complete</button>
+            </form>
+            &nbsp;
+            <form action="#" th:action="@{/todo/delete(id=${next.id})}" method="post">
+                <button type="submit">Delete</button>
+            </form>
+            <hr>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

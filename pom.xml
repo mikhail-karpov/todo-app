@@ -30,6 +30,7 @@
 
 	<modules>
 		<module>todo-service</module>
+		<module>todo-client</module>
 	</modules>
 
 </project>
