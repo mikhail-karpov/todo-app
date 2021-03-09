@@ -1,11 +1,14 @@
 package com.mikhailkarpov.todoservice.todo;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+
+import static com.fasterxml.jackson.annotation.JsonProperty.Access.READ_ONLY;
 
 @Entity(name = "Todo")
 @Table(name = "todos")
@@ -18,20 +21,17 @@ public class Todo {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "todos_id_seq")
     private Long id;
 
+    @Column(name = "owner_id", nullable = false)
+    private String ownerId;
+
     @Column(name = "description", nullable = false)
-    @NotBlank
     private String description;
 
     @Column(name = "completed", nullable = false)
-    @NotNull
     private Boolean completed;
 
     protected Todo() {
-
-    }
-
-    public Todo(String description) {
-        this(description, false);
+        //for JPA and JSON mapping
     }
 
     public Todo(String description, Boolean completed) {

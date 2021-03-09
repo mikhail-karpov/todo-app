@@ -1,15 +1,15 @@
 package com.mikhailkarpov.todoservice.todo;
 
+import java.util.List;
+
 public interface TodoService {
 
-    Todo create(Todo dto);
+    TodoDto create(String ownerId, TodoDto todo);
 
-    void delete(Long id);
+    void delete(Long id, String ownerId);
 
-    Iterable<Todo> findAll();
+    List<TodoDto> findAllByOwnerId(String ownerId);
 
-    Todo findById(Long id);
-
-    Todo update(Long id, Todo update);
+    TodoDto update(String ownerId, TodoDto update);
 
 }

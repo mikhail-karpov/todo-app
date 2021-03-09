@@ -1,8 +1,12 @@
 package com.mikhailkarpov.todoservice.todo;
 
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
@@ -12,51 +16,66 @@ public class TodoServiceImpl implements TodoService {
 
     @Override
     @Transactional
-    public Todo create(Todo todoDto) {
+    public TodoDto create(String subject, TodoDto dto) {
 
-        Todo entity = new Todo(todoDto.getDescription(), todoDto.getCompleted());
-        return todoRepository.save(entity);
+        Todo todo = new Todo();
+        todo.setOwnerId(subject);
+        todo.setDescription(dto.getDescription());
+        todo.setCompleted(true);
+        todo = todoRepository.save(todo);
+
+        return mapFromEntity(todo);
     }
 
     @Override
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id, String ownerId) {
 
-        Todo todo = findByIdOrElseThrow(id);
+        Todo todo = findByIdAndOwnerIdOrElseThrow(id, ownerId);
         todoRepository.delete(todo);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Iterable<Todo> findAll() {
+    public List<TodoDto> findAllByOwnerId(String ownerId) {
 
-        return todoRepository.findAll();
-    }
+        List<TodoDto> dtoList = new ArrayList<>();
 
-    @Override
-    @Transactional(readOnly = true)
-    public Todo findById(Long id) {
+        todoRepository.findAllByOwnerId(ownerId, Sort.by("description"))
+                .forEach(entity -> {
+                    TodoDto dto = mapFromEntity(entity);
+                    dtoList.add(dto);
+                });
 
-        return findByIdOrElseThrow(id);
+        return dtoList;
     }
 
     @Override
     @Transactional
-    public Todo update(Long id, Todo update) {
+    public TodoDto update(String ownerId, TodoDto update) {
 
-        Todo todo = findByIdOrElseThrow(id);
+        Todo todo = findByIdAndOwnerIdOrElseThrow(update.getId(), ownerId);
 
         todo.setDescription(update.getDescription());
         todo.setCompleted(update.getCompleted());
 
-        return todo;
+        return mapFromEntity(todo);
     }
 
-    private Todo findByIdOrElseThrow(Long id) {
+    private Todo findByIdAndOwnerIdOrElseThrow(Long id, String ownerId) {
 
-        return todoRepository.findById(id).orElseThrow(() -> {
-            String message = String.format("Record with id=%d not found", id);
-            return new TodoNotFoundException(message);
+        return todoRepository.findByIdAndOwnerId(id, ownerId).orElseThrow(() -> {
+            return new TodoNotFoundException("Record not found");
         });
+    }
+
+    private TodoDto mapFromEntity(Todo entity) {
+        TodoDto dto = new TodoDto();
+
+        dto.setId(entity.getId());
+        dto.setDescription(entity.getDescription());
+        dto.setCompleted(entity.getCompleted());
+
+        return dto;
     }
 }
