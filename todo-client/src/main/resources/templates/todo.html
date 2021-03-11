@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="UTF-8">
     <title>Todo-App</title>
@@ -10,9 +10,9 @@
 
 <div align="center">
     <h1>Todo App</h1>
-<!--    <div>-->
-<!--        Hello, <span sec:authentication="name">Username</span>&nbsp;<a href="/logout">logout</a>-->
-<!--    </div>-->
+    <div>
+        Hello, <span sec:authentication="name">Username</span>&nbsp;<a href="/logout">Logout</a>
+    </div>
 
     <div>
         <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post">
