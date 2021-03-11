@@ -20,10 +20,7 @@ spring:
               - email
         provider:
           keycloak:
-            authorization-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/auth
-            token-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/token
-            user-info-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/userinfo
-            jwk-set-uri: http://localhost:8180/auth/realms/todo-app/openid-connect/certs
+            issuer-uri: http://localhost:8180/auth/realms/todo-app
             user-name-attribute: preferred_username
 
 app:
