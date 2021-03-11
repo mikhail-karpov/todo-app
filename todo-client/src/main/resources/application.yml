@@ -11,7 +11,7 @@ spring:
           todo-client:
             provider: keycloak
             client-id: todo-client
-            client-secret: d7ae0991-e5ea-4bcb-889b-73d10955731d
+            client-secret: 1f5124d0-9ab6-4477-a695-499129468440
             authorization-grant-type: authorization_code
             redirectUri: '{baseUrl}/login/oauth2/code/{registrationId}'
             scope:

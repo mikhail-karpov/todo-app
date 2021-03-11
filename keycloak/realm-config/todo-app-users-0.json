@@ -1,0 +1,29 @@
+{
+  "realm" : "todo-app",
+  "users" : [ {
+    "id" : "b1793cb7-8a75-4f3c-8e2a-9652d485951e",
+    "createdTimestamp" : 1615456827989,
+    "username" : "demo",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : true,
+    "firstName" : "Mikhail",
+    "lastName" : "Karpov",
+    "email" : "demo@example.com",
+    "credentials" : [ {
+      "id" : "028b94cd-5fa4-4141-8e08-cc561579a86a",
+      "type" : "password",
+      "createdDate" : 1615456839240,
+      "secretData" : "{\"value\":\"mBXITl1HumVDcY1dw4Pggk/ABmAqFPoP6w1hBZ7iuntlDKNuxuJkgWpBNR2oz5SdB0scJMFeDMth4E6XgUEQ3g==\",\"salt\":\"h9H9tLVcygdRhVduOpY3VQ==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "user", "offline_access", "uma_authorization" ],
+    "clientRoles" : {
+      "account" : [ "view-profile", "manage-account" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  } ]
+}
