@@ -1,4 +1,4 @@
-server.port: 8080
+server.port: 8082
 
 spring:
   thymeleaf:
@@ -20,7 +20,7 @@ spring:
               - email
         provider:
           keycloak:
-            issuer-uri: http://localhost:8180/auth/realms/todo-app
+            issuer-uri: http://localhost:8080/auth/realms/todo-app
             user-name-attribute: preferred_username
 
 app:

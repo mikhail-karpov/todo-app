@@ -2,7 +2,7 @@ server.port: 8081
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/todo_service
+    url: jdbc:postgresql://localhost:5433/todo_service
     username: todo_service
     password: password
   flyway:
@@ -16,8 +16,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/auth/realms/todo-app
-          jwk-set-uri: http://localhost:8180/auth/realms/todo-app/protocol/openid-connect/certs
+          issuer-uri: http://localhost:8080/auth/realms/todo-app
+          jwk-set-uri: http://localhost:8080/auth/realms/todo-app/protocol/openid-connect/certs
 
 logging.level:
   root: INFO
