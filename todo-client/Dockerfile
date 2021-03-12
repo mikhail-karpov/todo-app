@@ -6,3 +6,4 @@ COPY ./target/*.jar /todo-client/
 EXPOSE 8082
 
 CMD ["java", "-jar", "/todo-client/todo-client.jar"]
+
