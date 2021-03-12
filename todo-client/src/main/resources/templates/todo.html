@@ -1,48 +1,85 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.w3.org/1999/xhtml">
+
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
     <title>Todo-App</title>
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+          integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l"
+          crossorigin="anonymous">
+    <style type="text/css">
+        .center-div{
+            margin: 0 auto;
+            width: 75%
+        }
+    </style>
+
 </head>
 <body>
 
-<!--todo styling-->
+<header>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container d-flex justify-content-between">
 
-<div align="center">
-    <h1>Todo App</h1>
-    <div>
-        Hello, <span sec:authentication="name">Username</span>&nbsp;<a href="/logout">Logout</a>
-    </div>
+            <a href="/" class="navbar-brand d-flex align-items-center">
+                <strong>Todo App</strong>
+            </a>
 
-    <div>
-        <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post">
-            <input type="text" th:field="*{description}" required />
-            <button type="submit">Save</button>
-        </form>
-        <div th:if="${error}" th:text="${error}" style="color: red">Description error</div>
-    </div>
-
-    <div th:if="${#lists.isEmpty(todoList)}">You've not added anything yet</div>
-
-    <div th:if="${not #lists.isEmpty(todoList)}" th:each="next: ${todoList}">
-        <div>
-            <span th:text="${next.description}">Description</span>
-            &nbsp;
-            <form action="#" th:action="@{/todo/update}" method="post">
-                <input type="hidden" th:value="${next.id}" th:name="id">
-                <input type="hidden" th:value="${next.description}" th:name="description">
-                <input type="hidden" th:value="${next.completed}" th:name="completed">
-                <button type="submit" th:text="${next.completed} ? 'yes' : 'no'"/>Complete</button>
-            </form>
-            &nbsp;
-            <form action="#" th:action="@{/todo/delete(id=${next.id})}" method="post">
-                <button type="submit">Delete</button>
-            </form>
-            <hr>
+            <div class="d-flex align-items-center text-white">
+                <span sec:authentication="name" class="mr-2">Username</span>&nbsp;
+                <a href="/logout" class="btn btn-outline-light" role="button">Logout</a>
+            </div>
         </div>
     </div>
+</header>
 
+<section class="my-5">
+    <div class="d-flex justify-content-center">
+            <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post" class="form-inline">
+                <input type="text" th:field="*{description}" placeholder="I'm going to..." class="form-control mr-sm-2" size="60">
+                <button type="submit" class="btn btn-dark">Save</button>
+            </form>
+    </div>
+    <div th:if="${error}" th:text="${error}" class="text-danger text-center my-1">Description error</div>
+</section>
+
+
+<div class="container">
+
+    <p th:if="${#lists.isEmpty(todoList)}" class="text-center">You've not added anything yet</p>
+
+    <div th:if="${not #lists.isEmpty(todoList)}" th:each="next: ${todoList}">
+        <div class="d-flex justify-content-between mb-2">
+            <div>
+                <p th:text="${next.description}" th:style="${next.completed ? 'text-decoration: line-through' : ''}">Description</p>
+            </div>
+            <div class="d-flex justify-content-between">
+                <form action="#" th:action="@{/todo/update}" method="post" class="mr-2">
+                    <input type="hidden" th:value="${next.id}" th:name="id">
+                    <input type="hidden" th:value="${next.description}" th:name="description">
+                    <input type="hidden" th:value="${next.completed}" th:name="completed">
+                    <button type="submit" th:text="${next.completed ? 'Cancel' : 'Complete'}" class="btn btn-success">Complete</button>
+                </form>
+                <form action="#" th:action="@{/todo/delete(id=${next.id})}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+        <hr>
+    </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns"
+        crossorigin="anonymous"></script>
 </body>
 </html>

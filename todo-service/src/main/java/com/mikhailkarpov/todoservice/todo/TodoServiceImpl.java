@@ -21,7 +21,7 @@ public class TodoServiceImpl implements TodoService {
         Todo todo = new Todo();
         todo.setOwnerId(subject);
         todo.setDescription(dto.getDescription());
-        todo.setCompleted(true);
+        todo.setCompleted(dto.getCompleted());
         todo = todoRepository.save(todo);
 
         return mapFromEntity(todo);
