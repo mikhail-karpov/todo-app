@@ -27,53 +27,51 @@
     <div class="navbar navbar-dark bg-dark shadow-sm">
         <div class="container d-flex justify-content-between">
 
-            <a href="#" class="navbar-brand d-flex align-items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none"
-                     stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                     aria-hidden="true" class="mr-2" viewBox="0 0 24 24" focusable="false">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                </svg>
+            <a href="/" class="navbar-brand d-flex align-items-center">
                 <strong>Todo App</strong>
             </a>
 
             <div class="d-flex align-items-center text-white">
                 <span sec:authentication="name" class="mr-2">Username</span>&nbsp;
-                <a href="/logout" class="btn btn-outline-light" role="button">logout</a>
+                <a href="/logout" class="btn btn-outline-light" role="button">Logout</a>
             </div>
         </div>
     </div>
 </header>
 
-<div class="container my-5">
-    <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post" class="form-inline">
-        <input type="text" th:field="*{description}" required placeholder="Description" class="form-control mr-sm-2">
-        <button type="submit" class="btn btn-dark">Save</button>
-    </form>
-</div>
+<section class="my-5">
+    <div class="d-flex justify-content-center">
+            <form action="#" th:action="@{/todo}" th:object="${todoForm}" method="post" class="form-inline">
+                <input type="text" th:field="*{description}" placeholder="I'm going to..." class="form-control mr-sm-2" size="60">
+                <button type="submit" class="btn btn-dark">Save</button>
+            </form>
+    </div>
+    <div th:if="${error}" th:text="${error}" class="text-danger text-center my-1">Description error</div>
+</section>
 
-<div th:if="${error}" th:text="${error}" style="text-sm-danger">Description error</div>
 
-<div class="row align-items-center justify-content-center">
+<div class="container">
 
-    <div th:if="${#lists.isEmpty(todoList)}">You've not added anything yet</div>
+    <p th:if="${#lists.isEmpty(todoList)}" class="text-center">You've not added anything yet</p>
 
     <div th:if="${not #lists.isEmpty(todoList)}" th:each="next: ${todoList}">
-        <div>
-            <span th:text="${next.description}">Description</span>
-            &nbsp;
-            <form action="#" th:action="@{/todo/update}" method="post">
-                <input type="hidden" th:value="${next.id}" th:name="id">
-                <input type="hidden" th:value="${next.description}" th:name="description">
-                <input type="hidden" th:value="${next.completed}" th:name="completed">
-                <button type="submit" th:text="${next.completed} ? 'yes' : 'no'"/>Complete</button>
-            </form>
-            &nbsp;
-            <form action="#" th:action="@{/todo/delete(id=${next.id})}" method="post">
-                <button type="submit">Delete</button>
-            </form>
-            <hr>
+        <div class="d-flex justify-content-between mb-2">
+            <div>
+                <p th:text="${next.description}" th:style="${next.completed ? 'text-decoration: line-through' : ''}">Description</p>
+            </div>
+            <div class="d-flex justify-content-between">
+                <form action="#" th:action="@{/todo/update}" method="post" class="mr-2">
+                    <input type="hidden" th:value="${next.id}" th:name="id">
+                    <input type="hidden" th:value="${next.description}" th:name="description">
+                    <input type="hidden" th:value="${next.completed}" th:name="completed">
+                    <button type="submit" th:text="${next.completed ? 'Cancel' : 'Complete'}" class="btn btn-success">Complete</button>
+                </form>
+                <form action="#" th:action="@{/todo/delete(id=${next.id})}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
         </div>
+        <hr>
     </div>
 </div>
 
