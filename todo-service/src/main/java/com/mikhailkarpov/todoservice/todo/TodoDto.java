@@ -17,7 +17,7 @@ public class TodoDto {
 
     private Long id;
 
-    @JsonProperty("owner_id")
+    @JsonProperty("owner-id")
     private String ownerId;
 
     @NotBlank

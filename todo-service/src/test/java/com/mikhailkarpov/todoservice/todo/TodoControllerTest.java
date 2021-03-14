@@ -62,11 +62,11 @@ class TodoControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id").value(1))
-                .andExpect(jsonPath("$[0].owner_id").value("test_user"))
+                .andExpect(jsonPath("$[0].owner-id").value("test_user"))
                 .andExpect(jsonPath("$[0].description").value("todo 1"))
                 .andExpect(jsonPath("$[0].completed").value(true))
                 .andExpect(jsonPath("$[1].id").value(2))
-                .andExpect(jsonPath("$[1].owner_id").value("test_user"))
+                .andExpect(jsonPath("$[1].owner-id").value("test_user"))
                 .andExpect(jsonPath("$[1].description").value("todo 2"))
                 .andExpect(jsonPath("$[1].completed").value(false));
 
@@ -95,7 +95,7 @@ class TodoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(14))
-                .andExpect(jsonPath("$.owner_id").value("test_user"))
+                .andExpect(jsonPath("$.owner-id").value("test_user"))
                 .andExpect(jsonPath("$.description").value("todo 14"))
                 .andExpect(jsonPath("$.completed").value(false));
 
@@ -142,7 +142,7 @@ class TodoControllerTest {
                 .andExpect(header().string("Location", "http://localhost/todo/12"))
                 .andExpect(content().contentType(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(12))
-                .andExpect(jsonPath("$.owner_id").value("test_user"))
+                .andExpect(jsonPath("$.owner-id").value("test_user"))
                 .andExpect(jsonPath("$.description").value("todo 1"))
                 .andExpect(jsonPath("$.completed").value(true));
 
@@ -174,11 +174,11 @@ class TodoControllerTest {
                 .accept(APPLICATION_JSON)
                 .with(jwt().jwt(jwt -> jwt.subject("test_user")))
                 .contentType(APPLICATION_JSON)
-                .content("{\"id\": 12, \"owner_id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
+                .content("{\"id\": 12, \"owner-id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(12))
-                .andExpect(jsonPath("$.owner_id").value("test_user"))
+                .andExpect(jsonPath("$.owner-id").value("test_user"))
                 .andExpect(jsonPath("$.description").value("todo 1"))
                 .andExpect(jsonPath("$.completed").value(false));
 
@@ -209,7 +209,7 @@ class TodoControllerTest {
                 .accept(APPLICATION_JSON)
                 .with(jwt().jwt(jwt -> jwt.subject("not_owner")))
                 .contentType(APPLICATION_JSON)
-                .content("{\"id\": 12, \"owner_id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
+                .content("{\"id\": 12, \"owner-id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
                 .andExpect(status().isForbidden());
 
         verifyNoMoreInteractions(todoService);
