@@ -1,19 +1,18 @@
 package com.mikhailkarpov.todoservice.todo;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -29,14 +28,9 @@ class TodoControllerTest {
     @MockBean
     private TodoService todoService;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private final TodoDto invalid1 = new TodoDto(1L, null, true);
-
-    private final TodoDto invalid2 = new TodoDto(2L, "description", null);
-
     @Test
-    void givenNoToken_whenHitEndpoints_thenUnauthorized() throws Exception {
+    void givenNoToken_thenUnauthorized() throws Exception {
+
         mockMvc.perform(get("/todo"))
                 .andExpect(status().isUnauthorized());
 
@@ -46,18 +40,18 @@ class TodoControllerTest {
         mockMvc.perform(put("/todo/1"))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/todo/1"))
+        mockMvc.perform(delete("/todo/1"))
                 .andExpect(status().isUnauthorized());
 
         verifyNoMoreInteractions(todoService);
     }
 
     @Test
-    void givenTodoList_whenGet_thenOk() throws Exception {
-        //when
+    void givenSubject_whenGet_thenOk() throws Exception {
+
         when(todoService.findAllByOwnerId("test_user")).thenReturn(Arrays.asList(
-                new TodoDto(1L, "todo 1", true),
-                new TodoDto(2L, "todo 2", false)
+                new TodoDto(1L, "test_user", "todo 1", true),
+                new TodoDto(2L, "test_user", "todo 2", false)
         ));
 
         mockMvc.perform(get("/todo")
@@ -68,13 +62,14 @@ class TodoControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].owner_id").value("test_user"))
                 .andExpect(jsonPath("$[0].description").value("todo 1"))
                 .andExpect(jsonPath("$[0].completed").value(true))
                 .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].owner_id").value("test_user"))
                 .andExpect(jsonPath("$[1].description").value("todo 2"))
                 .andExpect(jsonPath("$[1].completed").value(false));
 
-        //given empty list
         when(todoService.findAllByOwnerId("test_user")).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/todo")
@@ -88,21 +83,57 @@ class TodoControllerTest {
     }
 
     @Test
+    void givenSubject_whenGetById_thenOk() throws Exception {
+
+        TodoDto todo = new TodoDto(14L, "test_user", "todo 14", false);
+        JwtRequestPostProcessor test_user_jwt = jwt().jwt(jwt -> jwt.subject("test_user"));
+
+        when(todoService.findById(14L)).thenReturn(todo);
+        mockMvc.perform(get("/todo/14")
+                .with(test_user_jwt)
+                .accept(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(14))
+                .andExpect(jsonPath("$.owner_id").value("test_user"))
+                .andExpect(jsonPath("$.description").value("todo 14"))
+                .andExpect(jsonPath("$.completed").value(false));
+
+        verify(todoService).findById(14L);
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
+    void givenNotOwner_whenGetById_thenForbidden() throws Exception {
+
+        TodoDto todo = new TodoDto(14L, "test_user", "todo 14", false);
+        JwtRequestPostProcessor test_user_jwt = jwt().jwt(jwt -> jwt.subject("not_owner"));
+
+        when(todoService.findById(14L)).thenReturn(todo);
+        mockMvc.perform(get("/todo/14")
+                .with(test_user_jwt))
+                .andExpect(status().isForbidden());
+
+        verify(todoService).findById(14L);
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
     void givenValidTodo_whenPost_thenCreated() throws Exception {
-        //given
+
         TodoDto request = new TodoDto();
+        request.setOwnerId("test_user");
         request.setDescription("todo 1");
         request.setCompleted(true);
 
         TodoDto response = new TodoDto();
         response.setId(12L);
+        response.setOwnerId("test_user");
         response.setDescription("todo 1");
         response.setCompleted(true);
 
-        //when
-        when(todoService.create("test_user", request)).thenReturn(response);
+        when(todoService.save(request)).thenReturn(response);
 
-        //then
         mockMvc.perform(post("/todo")
                 .with(jwt().jwt(jwt -> jwt.subject("test_user")))
                 .contentType(APPLICATION_JSON)
@@ -111,25 +142,23 @@ class TodoControllerTest {
                 .andExpect(header().string("Location", "http://localhost/todo/12"))
                 .andExpect(content().contentType(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(12))
+                .andExpect(jsonPath("$.owner_id").value("test_user"))
                 .andExpect(jsonPath("$.description").value("todo 1"))
                 .andExpect(jsonPath("$.completed").value(true));
 
-        verify(todoService).create("test_user", request);
+        verify(todoService).save(request);
         verifyNoMoreInteractions(todoService);
     }
 
-    @Test
-    @WithMockUser
-    void givenInvalidTodo_whenPost_thenBadRequest() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"", "{\"completed\": true}", "{\"description\": \"todo\"}"})
+    void givenInvalidTodo_whenPost_thenBadRequest(String body) throws Exception {
 
-        mockMvc.perform(post("/todo")
-                .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalid1)))
-                .andExpect(status().isBadRequest());
+        JwtRequestPostProcessor test_user = jwt().jwt(jwt -> jwt.subject("test_user"));
 
-        mockMvc.perform(post("/todo")
+        mockMvc.perform(post("/todo").with(test_user)
                 .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalid2)))
+                .content(body))
                 .andExpect(status().isBadRequest());
 
         verifyNoMoreInteractions(todoService);
@@ -137,51 +166,81 @@ class TodoControllerTest {
 
     @Test
     void givenValidTodo_whenUpdate_thenOk() throws Exception {
-        TodoDto todo = new TodoDto(12L, "todo 1", true);
 
-        //when
-        when(todoService.update("test_user", todo)).thenReturn(todo);
+        TodoDto todo = new TodoDto(12L, "test_user", "todo 1", false);
+        when(todoService.update(12L, todo)).thenReturn(todo);
 
-        //then
         mockMvc.perform(put("/todo/12")
+                .accept(APPLICATION_JSON)
                 .with(jwt().jwt(jwt -> jwt.subject("test_user")))
                 .contentType(APPLICATION_JSON)
-                .content("{\"id\": 12, \"description\": \"todo 1\", \"completed\": true}"))
+                .content("{\"id\": 12, \"owner_id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").value(12))
+                .andExpect(jsonPath("$.owner_id").value("test_user"))
                 .andExpect(jsonPath("$.description").value("todo 1"))
-                .andExpect(jsonPath("$.completed").value(true));
+                .andExpect(jsonPath("$.completed").value(false));
 
-        verify(todoService).update("test_user", todo);
+        verify(todoService).update(12L, todo);
         verifyNoMoreInteractions(todoService);
     }
 
-    @Test
-    @WithMockUser
-    void givenInvalidTodo_whenUpdate_thenBadRequest() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"", "{\"completed\": true}", "{\"description\": \"todo\"}"})
+    void givenInvalidTodo_whenUpdate_thenBadRequest(String body) throws Exception {
 
         mockMvc.perform(put("/todo/12")
+                .with(jwt().jwt(jwt -> jwt.subject("test_user")))
                 .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalid1)))
-                .andExpect(status().isBadRequest());
-
-        mockMvc.perform(put("/todo/12")
-                .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(invalid2)))
+                .content(body))
                 .andExpect(status().isBadRequest());
 
         verifyNoMoreInteractions(todoService);
     }
 
     @Test
-    void whenDelete_thenNoContent() throws Exception {
+    void givenNotOwner_whenUpdate_thenForbidden() throws Exception {
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/todo/1")
+        TodoDto todo = new TodoDto(12L, "test_user", "todo 1", false);
+        when(todoService.update(12L, todo)).thenReturn(todo);
+
+        mockMvc.perform(put("/todo/12")
+                .accept(APPLICATION_JSON)
+                .with(jwt().jwt(jwt -> jwt.subject("not_owner")))
+                .contentType(APPLICATION_JSON)
+                .content("{\"id\": 12, \"owner_id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
+                .andExpect(status().isForbidden());
+
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
+    void givenTodoFound_whenDelete_thenNoContent() throws Exception {
+
+        TodoDto todo = new TodoDto(1L, "test_user", "todo 1", false);
+        when(todoService.findById(1L)).thenReturn(todo);
+
+        mockMvc.perform(delete("/todo/1")
                 .with(jwt().jwt(jwt -> jwt.subject("test_user"))))
                 .andExpect(status().isNoContent());
 
+        verify(todoService).findById(1L);
         verify(todoService).delete(1L, "test_user");
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
+    void givenNotOwner_whenDelete_thenForbidden() throws Exception {
+
+        TodoDto todo = new TodoDto(1L, "test_user", "todo 1", false);
+        when(todoService.findById(1L)).thenReturn(todo);
+
+        mockMvc.perform(delete("/todo/1")
+                .with(jwt().jwt(jwt -> jwt.subject("not_owner"))))
+                .andExpect(status().isForbidden());
+
+        verify(todoService).findById(1L);
         verifyNoMoreInteractions(todoService);
     }
 }

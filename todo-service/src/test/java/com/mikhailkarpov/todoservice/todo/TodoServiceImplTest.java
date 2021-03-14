@@ -18,21 +18,19 @@ class TodoServiceImplTest {
     private final TodoService todoService = new TodoServiceImpl(todoRepository);
 
     @Test
-    void givenDto_whenCreate_thenSuccess() {
+    void givenDto_whenSave_thenSuccess() {
         //given
         TodoDto dto = new TodoDto();
         dto.setDescription("description");
         dto.setCompleted(false);
+        dto.setOwnerId("owner");
 
-        Todo entity = new Todo();
+        Todo entity = new Todo("owner", "description", false);
         entity.setId(12L);
-        entity.setOwnerId("owner");
-        entity.setDescription("description");
-        entity.setCompleted(false);
 
         //when
         when(todoRepository.save(any(Todo.class))).thenReturn(entity);
-        TodoDto created = todoService.create("owner", dto);
+        TodoDto created = todoService.save(dto);
 
         //then
         assertEquals(12L, created.getId());
@@ -53,11 +51,11 @@ class TodoServiceImplTest {
         found.setCompleted(true);
 
         //when
-        when(todoRepository.findByIdAndOwnerId(13L, "owner")).thenReturn(Optional.of(found));
+        when(todoRepository.findById(13L)).thenReturn(Optional.of(found));
         todoService.delete(13L, "owner");
 
         //then
-        verify(todoRepository).findByIdAndOwnerId(13L, "owner");
+        verify(todoRepository).findById(13L);
         verify(todoRepository).delete(any(Todo.class));
         verifyNoMoreInteractions(todoRepository);
     }
@@ -65,10 +63,12 @@ class TodoServiceImplTest {
     @Test
     void givenNoTodo_whenDelete_thenThrows() {
         //when
-        when(todoRepository.findByIdAndOwnerId(13L, "owner")).thenReturn(Optional.empty());
+        when(todoRepository.findById(13L)).thenReturn(Optional.empty());
 
         //then
         assertThrows(TodoNotFoundException.class, () -> todoService.delete(13L, "owner"));
+        verify(todoRepository).findById(13L);
+        verifyNoMoreInteractions(todoRepository);
     }
 
     @Test
@@ -96,14 +96,14 @@ class TodoServiceImplTest {
         found.setCompleted(true);
 
         //when
-        when(todoRepository.findByIdAndOwnerId(13L, "owner")).thenReturn(Optional.of(found));
-        TodoDto updated = todoService.update("owner", update);
+        when(todoRepository.findById(13L)).thenReturn(Optional.of(found));
+        TodoDto updated = todoService.update(13L, update);
 
         assertEquals(13L, updated.getId());
         assertEquals("update", updated.getDescription());
         assertFalse(updated.getCompleted());
 
-        verify(todoRepository).findByIdAndOwnerId(13L, "owner");
+        verify(todoRepository).findById(13L);
         verifyNoMoreInteractions(todoRepository);
     }
 
@@ -113,9 +113,39 @@ class TodoServiceImplTest {
         TodoDto update = new TodoDto(13L, "update", false);
 
         //when
-        when(todoRepository.findByIdAndOwnerId(13L, "owner")).thenReturn(Optional.empty());
+        when(todoRepository.findById(13L)).thenReturn(Optional.empty());
 
         //then
-        assertThrows(TodoNotFoundException.class, () -> todoService.update("owner", update));
+        assertThrows(TodoNotFoundException.class, () -> todoService.update(13L, update));
+        verify(todoRepository).findById(13L);
+        verifyNoMoreInteractions(todoRepository);
+    }
+
+    @Test
+    void givenTodoFound_whenFindById_thenSuccess() {
+
+        Todo todo = new Todo("owner", "update", false);
+        todo.setId(13L);
+        when(todoRepository.findById(13L)).thenReturn(Optional.of(todo));
+
+        TodoDto found = todoService.findById(13L);
+
+        assertEquals(13L, found.getId());
+        assertEquals("owner", found.getOwnerId());
+        assertEquals("update", found.getDescription());
+        assertFalse(found.getCompleted());
+
+        verify(todoRepository).findById(13L);
+        verifyNoMoreInteractions(todoRepository);
+    }
+
+    @Test
+    void givenTodoNotFound_whenFindById_thenThrows() {
+
+        when(todoRepository.findById(13L)).thenReturn(Optional.empty());
+
+        assertThrows(TodoNotFoundException.class, () -> todoService.findById(13L));
+        verify(todoRepository).findById(13L);
+        verifyNoMoreInteractions(todoRepository);
     }
 }
