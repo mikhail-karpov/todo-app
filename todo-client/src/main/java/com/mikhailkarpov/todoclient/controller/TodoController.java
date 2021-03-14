@@ -63,12 +63,13 @@ public class TodoController {
     @PostMapping("/todo/update")
     public String toggleComplete(@RequestParam Long id,
                                  @RequestParam String description,
+                                 @RequestParam String ownerId,
                                  @RequestParam Boolean completed,
                                  @AuthenticationPrincipal OAuth2User user) {
 
         log.debug("Request to toggle complete in todo with id={} by '{}'", id, user.getName());
 
-        Todo update = new Todo(id, description, !completed);
+        Todo update = new Todo(id, ownerId, description, !completed);
         todoService.update(id, update);
 
         return "redirect:/todo";
