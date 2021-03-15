@@ -34,7 +34,8 @@ public class Todo {
         //for JPA and JSON mapping
     }
 
-    public Todo(String description, Boolean completed) {
+    public Todo(String ownerId, String description, Boolean completed) {
+        this.ownerId = ownerId;
         this.description = description;
         this.completed = completed;
     }

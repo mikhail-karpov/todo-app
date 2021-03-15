@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="en">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
 
 <head>
     <meta charset="utf-8">
@@ -26,9 +27,9 @@
 
 <div class="jumbotron text-center vertical-center">
     <div class="container">
-        <h1>Oops!</h1>
+        <h1 th:text="${error.status}">Oops!</h1>
 
-        <p class="lead text-muted">Something went wrong. Please, try again later</p>
+        <p class="lead text-muted" th:text="${error.message}">Something went wrong. Please, try again later</p>
 
         <p><a href="/" class="btn btn-primary my-2">Home</a></p>
     </div>

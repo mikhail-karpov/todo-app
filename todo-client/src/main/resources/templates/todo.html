@@ -64,6 +64,7 @@
                     <input type="hidden" th:value="${next.id}" th:name="id">
                     <input type="hidden" th:value="${next.description}" th:name="description">
                     <input type="hidden" th:value="${next.completed}" th:name="completed">
+                    <input type="hidden" th:value="${next.ownerId}" th:name="ownerId">
                     <button type="submit" th:text="${next.completed ? 'Cancel' : 'Complete'}" class="btn btn-success">Complete</button>
                 </form>
                 <form action="#" th:action="@{/todo/delete(id=${next.id})}" method="post">
