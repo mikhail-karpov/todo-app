@@ -1,13 +1,16 @@
 package com.mikhailkarpov.todoclient.service;
 
+import com.mikhailkarpov.todoclient.exception.TodoServiceException;
 import com.mikhailkarpov.todoclient.model.Todo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +34,10 @@ public class TodoServiceImpl implements TodoService {
         ResponseEntity<Flux<Todo>> responseEntity = webClient.get()
                 .uri(todoServiceUri)
                 .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    HttpStatus httpStatus = clientResponse.statusCode();
+                    return Mono.error(new TodoServiceException(httpStatus));
+                })
                 .toEntityFlux(Todo.class)
                 .block();
 
@@ -48,6 +55,10 @@ public class TodoServiceImpl implements TodoService {
                 .uri(todoServiceUri)
                 .body(BodyInserters.fromValue(todo))
                 .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    HttpStatus httpStatus = clientResponse.statusCode();
+                    return Mono.error(new TodoServiceException(httpStatus));
+                })
                 .toEntity(Todo.class)
                 .block();
 
@@ -63,6 +74,10 @@ public class TodoServiceImpl implements TodoService {
                 .uri(uri)
                 .body(BodyInserters.fromValue(update))
                 .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    HttpStatus httpStatus = clientResponse.statusCode();
+                    return Mono.error(new TodoServiceException(httpStatus));
+                })
                 .toEntity(Todo.class)
                 .block();
 
@@ -77,6 +92,10 @@ public class TodoServiceImpl implements TodoService {
         ResponseEntity<Void> responseEntity = webClient.delete()
                 .uri(uri)
                 .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, clientResponse -> {
+                    HttpStatus httpStatus = clientResponse.statusCode();
+                    return Mono.error(new TodoServiceException(httpStatus));
+                })
                 .toBodilessEntity()
                 .block();
 
