@@ -44,7 +44,7 @@ public class TodoServiceImpl implements TodoService {
     public TodoDto findById(Long id) {
 
         return todoRepository.findById(id).map(this::mapFromEntity).orElseThrow(() -> {
-            String message = String.format("Todo with id={} not found");
+            String message = String.format("Todo with id=%d not found", id);
             return new TodoNotFoundException(message);
         });
     }
