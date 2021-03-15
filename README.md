@@ -10,8 +10,7 @@ To make things work, you’ll need to make sure to add the following to your hos
 <code>127.0.0.1 keycloak</code>
 
 This is because you will access your application with a browser on your machine 
-(which name is localhost, or 127.0.0.1), but inside Docker it will run in its own container, 
-which name is keycloak.
+(which name is localhost, or 127.0.0.1), but inside Docker it will run in its own containers.
 
 See: https://stackoverflow.com/questions/51877246/docker-spring-boot-or-thorntail-and-keycloak
 
