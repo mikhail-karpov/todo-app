@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
@@ -27,6 +28,10 @@ class TodoControllerTest {
 
     @MockBean
     private TodoService todoService;
+
+    private final JwtRequestPostProcessor ownerJwt = jwt().jwt(jwt -> jwt.subject("test_user"));
+
+    private final JwtRequestPostProcessor notOwnerJwt = jwt().jwt(jwt -> jwt.subject("not-owner"));
 
     @Test
     void givenNoToken_thenUnauthorized() throws Exception {
@@ -47,15 +52,17 @@ class TodoControllerTest {
     }
 
     @Test
-    void givenSubject_whenGet_thenOk() throws Exception {
+    void givenTodoList_whenGet_thenOk() throws Exception {
 
-        when(todoService.findAllByOwnerId("test_user")).thenReturn(Arrays.asList(
+        List<TodoDto> expectedList = Arrays.asList(
                 new TodoDto(1L, "test_user", "todo 1", true),
                 new TodoDto(2L, "test_user", "todo 2", false)
-        ));
+        );
+
+        when(todoService.findAllByOwnerId("test_user")).thenReturn(expectedList);
 
         mockMvc.perform(get("/todo")
-                .with(jwt().jwt(jwt -> jwt.subject("test_user")))
+                .with(ownerJwt)
                 .accept(APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(APPLICATION_JSON))
@@ -70,27 +77,34 @@ class TodoControllerTest {
                 .andExpect(jsonPath("$[1].description").value("todo 2"))
                 .andExpect(jsonPath("$[1].completed").value(false));
 
-        when(todoService.findAllByOwnerId("test_user")).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(get("/todo")
-                .with(jwt().jwt(jwt -> jwt.subject("test_user"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
-
-        verify(todoService, times(2)).findAllByOwnerId("test_user");
+        verify(todoService).findAllByOwnerId("test_user");
         verifyNoMoreInteractions(todoService);
     }
 
     @Test
-    void givenSubject_whenGetById_thenOk() throws Exception {
+    void givenEmptyList_whenGet_thenOk() throws Exception {
+        when(todoService.findAllByOwnerId("test_user")).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/todo")
+                .with(ownerJwt))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(todoService).findAllByOwnerId("test_user");
+        verifyNoMoreInteractions(todoService);
+    }
+
+
+    @Test
+    void givenTodo_whenGetById_thenOk() throws Exception {
 
         TodoDto todo = new TodoDto(14L, "test_user", "todo 14", false);
-        JwtRequestPostProcessor test_user_jwt = jwt().jwt(jwt -> jwt.subject("test_user"));
 
         when(todoService.findById(14L)).thenReturn(todo);
+
         mockMvc.perform(get("/todo/14")
-                .with(test_user_jwt)
+                .with(ownerJwt)
                 .accept(APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(APPLICATION_JSON))
@@ -104,15 +118,27 @@ class TodoControllerTest {
     }
 
     @Test
-    void givenNotOwner_whenGetById_thenForbidden() throws Exception {
+    void givenAnothersTodo_whenGetById_thenForbidden() throws Exception {
 
         TodoDto todo = new TodoDto(14L, "test_user", "todo 14", false);
-        JwtRequestPostProcessor test_user_jwt = jwt().jwt(jwt -> jwt.subject("not_owner"));
 
         when(todoService.findById(14L)).thenReturn(todo);
         mockMvc.perform(get("/todo/14")
-                .with(test_user_jwt))
+                .with(notOwnerJwt))
                 .andExpect(status().isForbidden());
+
+        verify(todoService).findById(14L);
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
+    void givenNotFoundTodo_whenGetById_thenNotFound() throws Exception {
+
+        when(todoService.findById(14L)).thenThrow(TodoNotFoundException.class);
+
+        mockMvc.perform(get("/todo/14")
+                .with(ownerJwt))
+                .andExpect(status().isNotFound());
 
         verify(todoService).findById(14L);
         verifyNoMoreInteractions(todoService);
@@ -121,18 +147,18 @@ class TodoControllerTest {
     @Test
     void givenValidTodo_whenPost_thenCreated() throws Exception {
 
-        TodoDto request = new TodoDto();
-        request.setOwnerId("test_user");
-        request.setDescription("todo 1");
-        request.setCompleted(true);
+        TodoDto saveRequest = new TodoDto();
+        saveRequest.setOwnerId("test_user");
+        saveRequest.setDescription("todo 1");
+        saveRequest.setCompleted(true);
 
-        TodoDto response = new TodoDto();
-        response.setId(12L);
-        response.setOwnerId("test_user");
-        response.setDescription("todo 1");
-        response.setCompleted(true);
+        TodoDto saved = new TodoDto();
+        saved.setId(12L);
+        saved.setOwnerId("test_user");
+        saved.setDescription("todo 1");
+        saved.setCompleted(true);
 
-        when(todoService.save(request)).thenReturn(response);
+        when(todoService.save(saveRequest)).thenReturn(saved);
 
         mockMvc.perform(post("/todo")
                 .with(jwt().jwt(jwt -> jwt.subject("test_user")))
@@ -146,17 +172,16 @@ class TodoControllerTest {
                 .andExpect(jsonPath("$.description").value("todo 1"))
                 .andExpect(jsonPath("$.completed").value(true));
 
-        verify(todoService).save(request);
+        verify(todoService).save(saveRequest);
         verifyNoMoreInteractions(todoService);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "{\"completed\": true}", "{\"description\": \"todo\"}"})
+    @ValueSource(strings = {"", "{\"completed\": true}", "{\"description\": \"todo\"}", "{\"owner-id\": \"123456\"}"})
     void givenInvalidTodo_whenPost_thenBadRequest(String body) throws Exception {
 
-        JwtRequestPostProcessor test_user = jwt().jwt(jwt -> jwt.subject("test_user"));
-
-        mockMvc.perform(post("/todo").with(test_user)
+        mockMvc.perform(post("/todo")
+                .with(ownerJwt)
                 .contentType(APPLICATION_JSON)
                 .content(body))
                 .andExpect(status().isBadRequest());
@@ -172,7 +197,7 @@ class TodoControllerTest {
 
         mockMvc.perform(put("/todo/12")
                 .accept(APPLICATION_JSON)
-                .with(jwt().jwt(jwt -> jwt.subject("test_user")))
+                .with(ownerJwt)
                 .contentType(APPLICATION_JSON)
                 .content("{\"id\": 12, \"owner-id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
                 .andExpect(status().isOk())
@@ -191,7 +216,7 @@ class TodoControllerTest {
     void givenInvalidTodo_whenUpdate_thenBadRequest(String body) throws Exception {
 
         mockMvc.perform(put("/todo/12")
-                .with(jwt().jwt(jwt -> jwt.subject("test_user")))
+                .with(ownerJwt)
                 .contentType(APPLICATION_JSON)
                 .content(body))
                 .andExpect(status().isBadRequest());
@@ -200,18 +225,35 @@ class TodoControllerTest {
     }
 
     @Test
-    void givenNotOwner_whenUpdate_thenForbidden() throws Exception {
+    void givenAnothersTodo_whenUpdate_thenForbidden() throws Exception {
 
         TodoDto todo = new TodoDto(12L, "test_user", "todo 1", false);
         when(todoService.update(12L, todo)).thenReturn(todo);
 
         mockMvc.perform(put("/todo/12")
                 .accept(APPLICATION_JSON)
-                .with(jwt().jwt(jwt -> jwt.subject("not_owner")))
+                .with(notOwnerJwt)
                 .contentType(APPLICATION_JSON)
                 .content("{\"id\": 12, \"owner-id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
                 .andExpect(status().isForbidden());
 
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
+    void givenTodoNotFound_whenUpdate_thenNotFound() throws Exception {
+
+        TodoDto update = new TodoDto(12L, "test_user", "todo 1", false);
+        when(todoService.update(12L, update)).thenThrow(TodoNotFoundException.class);
+
+        mockMvc.perform(put("/todo/12")
+                .accept(APPLICATION_JSON)
+                .with(ownerJwt)
+                .contentType(APPLICATION_JSON)
+                .content("{\"id\": 12, \"owner-id\": \"test_user\", \"description\": \"todo 1\", \"completed\": false}"))
+                .andExpect(status().isNotFound());
+
+        verify(todoService).update(12L, update);
         verifyNoMoreInteractions(todoService);
     }
 
@@ -231,16 +273,29 @@ class TodoControllerTest {
     }
 
     @Test
-    void givenNotOwner_whenDelete_thenForbidden() throws Exception {
+    void givenAnothersTodo_whenDelete_thenForbidden() throws Exception {
 
         TodoDto todo = new TodoDto(1L, "test_user", "todo 1", false);
         when(todoService.findById(1L)).thenReturn(todo);
 
         mockMvc.perform(delete("/todo/1")
-                .with(jwt().jwt(jwt -> jwt.subject("not_owner"))))
+                .with(notOwnerJwt))
                 .andExpect(status().isForbidden());
 
         verify(todoService).findById(1L);
+        verifyNoMoreInteractions(todoService);
+    }
+
+    @Test
+    void givenNotFoundTodo_whenDelete_thenNotFound() throws Exception {
+
+        when(todoService.findById(11L)).thenThrow(TodoNotFoundException.class);
+
+        mockMvc.perform(delete("/todo/11")
+                .with(ownerJwt))
+                .andExpect(status().isNotFound());
+
+        verify(todoService).findById(11L);
         verifyNoMoreInteractions(todoService);
     }
 }
