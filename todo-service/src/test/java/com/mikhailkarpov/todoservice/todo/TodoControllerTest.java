@@ -1,6 +1,5 @@
 package com.mikhailkarpov.todoservice.todo;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -9,13 +8,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -32,11 +29,9 @@ class TodoControllerTest {
     @MockBean
     private TodoService todoService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final JwtRequestPostProcessor ownerJwt = jwt().jwt(jwt -> jwt.subject("test_user"));
 
-    private JwtRequestPostProcessor ownerJwt = jwt().jwt(jwt -> jwt.subject("test_user"));
-    private JwtRequestPostProcessor notOwnerJwt = jwt().jwt(jwt -> jwt.subject("not-owner"));
+    private final JwtRequestPostProcessor notOwnerJwt = jwt().jwt(jwt -> jwt.subject("not-owner"));
 
     @Test
     void givenNoToken_thenUnauthorized() throws Exception {
@@ -66,16 +61,22 @@ class TodoControllerTest {
 
         when(todoService.findAllByOwnerId("test_user")).thenReturn(expectedList);
 
-        MvcResult result = mockMvc.perform(get("/todo")
+        mockMvc.perform(get("/todo")
                 .with(ownerJwt)
                 .accept(APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(APPLICATION_JSON))
-                .andReturn();
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].owner-id").value("test_user"))
+                .andExpect(jsonPath("$[0].description").value("todo 1"))
+                .andExpect(jsonPath("$[0].completed").value(true))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].owner-id").value("test_user"))
+                .andExpect(jsonPath("$[1].description").value("todo 2"))
+                .andExpect(jsonPath("$[1].completed").value(false));
 
-        TodoDto[] responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), TodoDto[].class);
-
-        assertThat(expectedList).isEqualTo(Arrays.asList(responseBody));
         verify(todoService).findAllByOwnerId("test_user");
         verifyNoMoreInteractions(todoService);
     }
